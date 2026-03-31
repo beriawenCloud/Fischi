@@ -28,7 +28,14 @@ button{font-family:inherit;cursor:pointer;border:none;outline:none}
 .hstat-l{font-size:10px;opacity:.75;margin-top:1px}
 .sec-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:var(--tx2);margin-bottom:10px}
 .ch-list{display:flex;flex-direction:column;gap:10px;margin-bottom:22px}
-.ch-card{background:var(--sf);border:1px solid var(--br);border-radius:var(--r2);padding:14px 16px;cursor:pointer;transition:all .15s;box-shadow:var(--sh);display:flex;align-items:center;gap:14px}
+.ch-card{background:var(--sf);border:1px solid var(--br);border-radius:var(--r2);padding:14px 16px;transition:all .15s;box-shadow:var(--sh);display:flex;flex-direction:column;gap:0}
+.ch-card:hover{border-color:var(--br2);transform:translateY(-1px)}
+.ch-card-top{display:flex;align-items:center;gap:14px;cursor:pointer;padding-bottom:10px}
+.ch-card-btns{display:flex;gap:8px;border-top:1px solid var(--br);padding-top:10px}
+.ch-btn-quiz{flex:1;background:var(--pri);color:#fff;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;border:none;transition:background .15s}
+.ch-btn-quiz:hover{background:var(--pri2)}
+.ch-btn-all{flex:1;background:var(--sf);color:var(--pri);border:1px solid var(--br2);border-radius:8px;padding:8px 10px;font-size:12px;font-weight:600;font-family:inherit;cursor:pointer;transition:all .15s}
+.ch-btn-all:hover{background:var(--okbg)}
 .ch-card:hover{border-color:var(--br2);transform:translateY(-1px)}
 .ch-ico{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .ch-body{flex:1;min-width:0}
@@ -229,19 +236,30 @@ function buildHome(){
     const p=prog[m.key]||{};
     const pct=Math.round(((p.best||0)/QPR)*100);
     const div=document.createElement('div');div.className='ch-card';div.onclick=()=>startChapter(m.key);
-    div.innerHTML='<div class="ch-ico" style="background:'+m.bg+'"><svg width="20" height="18" viewBox="0 0 20 18" fill="none">'+m.icon+'</svg></div>'+
-      '<div class="ch-body"><div class="ch-name">'+m.short+'</div><div class="ch-sub">'+CHAPTERS[m.key].length+' Fragen · 20 im Quiz · '+(p.runs||0)+'× gespielt</div>'+
-      '<div class="pbar"><div class="pfill" style="width:'+pct+'%;background:'+m.color+'"></div></div></div>'+
-      '<svg class="arr" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+    div.innerHTML=
+      '<div class="ch-card-top" onclick="startChapter(\'' + m.key + '\')">'+
+        '<div class="ch-ico" style="background:'+m.bg+'"><svg width="20" height="18" viewBox="0 0 20 18" fill="none">'+m.icon+'</svg></div>'+
+        '<div class="ch-body">'+
+          '<div class="ch-name">'+m.short+'</div>'+
+          '<div class="ch-sub">'+CHAPTERS[m.key].length+' Fragen · '+(p.runs||0)+'× gespielt</div>'+
+          '<div class="pbar"><div class="pfill" style="width:'+pct+'%;background:'+m.color+'"></div></div>'+
+        '</div>'+
+        '<svg class="arr" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      '</div>'+
+      '<div class="ch-card-btns">'+
+        '<button class="ch-btn-quiz" onclick="startChapter(\'' + m.key + '\')">🎯 20 Fragen — Quiz</button>'+
+        '<button class="ch-btn-all" onclick="startAllQuestions(\'' + m.key + '\')">📋 Alle '+CHAPTERS[m.key].length+' Fragen</button>'+
+      '</div>';
     list.appendChild(div);
   }
 }
-function startChapter(key){S.chapter=key;S.qs=shuffle(CHAPTERS[key]).slice(0,QPR);S.qi=0;S.correct=0;S.wrong=[];S.answered=false;showScreen('s-quiz');renderQ();}
-function restartChapter(){startChapter(S.chapter);}
+function startChapter(key){S.chapter=key;S.allMode=false;S.qs=shuffle(CHAPTERS[key]).slice(0,QPR);S.qi=0;S.correct=0;S.wrong=[];S.answered=false;showScreen('s-quiz');renderQ();}
+function startAllQuestions(key){S.chapter=key;S.allMode=true;S.qs=shuffle(CHAPTERS[key]);S.qi=0;S.correct=0;S.wrong=[];S.answered=false;showScreen('s-quiz');renderQ();}
+function restartChapter(){S.allMode?startAllQuestions(S.chapter):startChapter(S.chapter);}
 function repeatWrong(){S.qs=shuffle(S.wrong);S.qi=0;S.correct=0;S.wrong=[];S.answered=false;showScreen('s-quiz');renderQ();}
 function renderQ(){
   const q=S.qs[S.qi];const tot=S.qs.length,cur=S.qi+1;S.answered=false;
-  document.getElementById('q-cat').textContent=S.chapter;
+  document.getElementById('q-cat').textContent=S.chapter+(S.allMode?' · Alle Fragen':'· Quiz');
   document.getElementById('q-cur').textContent=cur;
   document.getElementById('q-tot').textContent=tot;
   document.getElementById('q-prog').style.width=(cur/tot*100)+'%';
@@ -271,7 +289,7 @@ function pickAns(btn,correct){
 }
 function nextQ(){if(S.qi>=S.qs.length-1){showResults();return;}S.qi++;renderQ();}
 function showResults(){
-  const tot=S.qs.length,ok=S.correct,ng=tot-ok,threshold=tot>=20?PASS:Math.max(1,Math.ceil(tot*0.6)),passed=ok>=threshold;
+  const tot=S.qs.length,ok=S.correct,ng=tot-ok,threshold=S.allMode?Math.ceil(tot*0.6):tot>=20?PASS:Math.max(1,Math.ceil(tot*0.6)),passed=ok>=threshold;
   const p=prog[S.chapter]||{runs:0,best:0};p.runs++;if(ok>p.best)p.best=ok;prog[S.chapter]=p;saveProg();
   document.getElementById('res-n').textContent=ok;document.getElementById('res-d').textContent='von '+tot;
   document.getElementById('res-ok').textContent=ok;document.getElementById('res-ng').textContent=ng;document.getElementById('res-pass').textContent=threshold;
