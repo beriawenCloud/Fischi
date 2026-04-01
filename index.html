@@ -236,8 +236,9 @@ function buildHome(){
     const p=prog[m.key]||{};
     const pct=Math.round(((p.best||0)/QPR)*100);
     const div=document.createElement('div');div.className='ch-card';div.onclick=()=>startChapter(m.key);
+    div.dataset.key = m.key;
     div.innerHTML=
-      '<div class="ch-card-top" onclick="startChapter(\'' + m.key + '\')">'+
+      '<div class="ch-card-top">'+
         '<div class="ch-ico" style="background:'+m.bg+'"><svg width="20" height="18" viewBox="0 0 20 18" fill="none">'+m.icon+'</svg></div>'+
         '<div class="ch-body">'+
           '<div class="ch-name">'+m.short+'</div>'+
@@ -247,9 +248,12 @@ function buildHome(){
         '<svg class="arr" width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 3l5 5-5 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
       '</div>'+
       '<div class="ch-card-btns">'+
-        '<button class="ch-btn-quiz" onclick="startChapter(\'' + m.key + '\')">🎯 20 Fragen — Quiz</button>'+
-        '<button class="ch-btn-all" onclick="startAllQuestions(\'' + m.key + '\')">📋 Alle '+CHAPTERS[m.key].length+' Fragen</button>'+
+        '<button class="ch-btn-quiz" data-mode="quiz">🎯 20 Fragen — Quiz</button>'+
+        '<button class="ch-btn-all" data-mode="all">📋 Alle '+CHAPTERS[m.key].length+' Fragen</button>'+
       '</div>';
+    div.querySelector('.ch-card-top').onclick = () => startChapter(m.key);
+    div.querySelector('.ch-btn-quiz').onclick = (e) => { e.stopPropagation(); startChapter(m.key); };
+    div.querySelector('.ch-btn-all').onclick = (e) => { e.stopPropagation(); startAllQuestions(m.key); };
     list.appendChild(div);
   }
 }
@@ -259,7 +263,7 @@ function restartChapter(){S.allMode?startAllQuestions(S.chapter):startChapter(S.
 function repeatWrong(){S.qs=shuffle(S.wrong);S.qi=0;S.correct=0;S.wrong=[];S.answered=false;showScreen('s-quiz');renderQ();}
 function renderQ(){
   const q=S.qs[S.qi];const tot=S.qs.length,cur=S.qi+1;S.answered=false;
-  document.getElementById('q-cat').textContent=S.chapter+(S.allMode?' · Alle Fragen':'· Quiz');
+  document.getElementById('q-cat').textContent=S.chapter+(S.allMode?' · Alle Fragen':' · Quiz');
   document.getElementById('q-cur').textContent=cur;
   document.getElementById('q-tot').textContent=tot;
   document.getElementById('q-prog').style.width=(cur/tot*100)+'%';
